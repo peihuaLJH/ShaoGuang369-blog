@@ -267,14 +267,6 @@ function App() {
                 </div>
               </div>
 
-              <div className="about-content">
-                <h3>我想说的话</h3>
-                <div className="about-message">
-                  {/* 这里先空着，等用户想好内容后再填写 */}
-                  <p>（内容待更新...）</p>
-                </div>
-              </div>
-
               {/* 关于本站 */}
               <div className="site-info">
                 <h3>关于本站</h3>

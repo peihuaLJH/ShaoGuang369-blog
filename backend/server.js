@@ -15,11 +15,15 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // 数据库连接
-mongoose.connect('mongodb://localhost:27017/blog', {
+mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/blog', {
   useNewUrlParser: true,
   useUnifiedTopology: true
 }).then(() => {
   console.log('MongoDB connected');
+  // 延迟初始化以确保连接稳定
+  setTimeout(() => {
+    require('./routes/posts'); // 这会触发initTestPosts
+  }, 2000);
 }).catch(err => {
   console.error('MongoDB connection error:', err);
   // 如果连接失败，使用内存存储作为 fallback
