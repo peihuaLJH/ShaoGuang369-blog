@@ -1,72 +1,92 @@
 const express = require('express');
 const router = express.Router();
-const User = require('../models/User');
-const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const User = require('../models/User');
 
-// 登录
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+
 router.post('/login', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, phone } = req.body;
+    const DEBUG = true;
     
-    // 只允许 ShaoGuang 登录后台
-    if (username !== 'ShaoGuang') {
-      return res.status(401).json({ message: '该用户无权限访问后台' });
-    }
+    if (DEBUG) console.log(`[登录] 尝试登录: username=${username}, phone=${phone}`);
     
-    // 查找用户
     const user = await User.findOne({ username });
     if (!user) {
+      if (DEBUG) console.log(`[登录] 用户不存在: ${username}`);
       return res.status(401).json({ message: '用户名或密码错误' });
     }
+    if (DEBUG) console.log(`[登录] 用户已找到: ${username}, role=${user.role}`);
     
-    // 验证密码（支持明文和加密密码）
-    let isMatch = false;
-    
-    // 先尝试 bcrypt 比较（加密密码）
-    if (user.password.startsWith('$2')) {
-      isMatch = await bcrypt.compare(password, user.password);
-    } else {
-      // 明文密码直接比较
-      isMatch = password === user.password;
-    }
-    
+    const isMatch = await user.comparePassword(password);
     if (!isMatch) {
+      if (DEBUG) console.log(`[登录] 密码错误: ${username}`);
       return res.status(401).json({ message: '用户名或密码错误' });
     }
+    if (DEBUG) console.log(`[登录] 密码正确: ${username}`);
+
+    // 管理员登录需要验证手机号
+    if (user.role === 'admin') {
+      if (DEBUG) console.log(`[登录] 检查手机号: 数据库=${user.phone}, 前端=${phone}`);
+      if (!phone || user.phone !== phone) {
+        if (DEBUG) console.log(`[登录] 手机号验证失败`);
+        return res.status(401).json({ message: '手机号验证失败' });
+      }
+      if (DEBUG) console.log(`[登录] 手机号验证成功`);
+    }
     
-    // 生成token
-    const token = jwt.sign({ id: user._id, role: user.role }, 
-      process.env.JWT_SECRET || 'your-secret-key', 
+    const token = jwt.sign(
+      { userId: user._id, username: user.username, role: user.role },
+      JWT_SECRET,
       { expiresIn: '7d' }
     );
     
-    res.json({ token, user: { id: user._id, username: user.username, role: user.role } });
+    if (DEBUG) console.log(`[登录] ✓ 登录成功: ${username}`);
+    res.json({
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
+    });
   } catch (error) {
+    console.error('登录错误:', error);
     res.status(500).json({ message: '服务器错误' });
   }
 });
 
-// 注册（仅用于初始化管理员账户）
 router.post('/register', async (req, res) => {
   try {
-    const { username, password } = req.body;
+    const { username, password, email } = req.body;
     
-    // 检查用户是否已存在
     const existingUser = await User.findOne({ username });
     if (existingUser) {
       return res.status(400).json({ message: '用户名已存在' });
     }
     
-    // 加密密码
-    const hashedPassword = await bcrypt.hash(password, 10);
-    
-    // 创建用户
-    const user = new User({ username, password: hashedPassword });
+    const user = new User({ username, password, email, role: 'user' });
     await user.save();
     
-    res.status(201).json({ message: '注册成功' });
+    const token = jwt.sign(
+      { userId: user._id, username: user.username, role: user.role },
+      JWT_SECRET,
+      { expiresIn: '7d' }
+    );
+    
+    res.status(201).json({
+      token,
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role
+      }
+    });
   } catch (error) {
+    console.error('注册错误:', error);
     res.status(500).json({ message: '服务器错误' });
   }
 });

@@ -112,24 +112,52 @@ export const commentApi = {
   })
 };
 
-// 统计相关
-export const statsApi = {
-  recordVisit: (data) => request('/stats/record', {
-    method: 'POST',
-    body: JSON.stringify(data)
-  }),
-  
-  getStats: (params = {}) => {
+// 分类相关
+export const categoryApi = {
+  getCategories: () => request('/categories'),
+  createCategory: (data) => request('/categories', { method: 'POST', body: JSON.stringify(data) }),
+  deleteCategory: (id) => request(`/categories/${id}`, { method: 'DELETE' })
+};
+
+// 留言相关
+export const messageApi = {
+  getMessages: () => request('/messages'),
+  createMessage: (data) => request('/messages', { method: 'POST', body: JSON.stringify(data) }),
+  getAllMessages: (params = {}) => {
     const queryString = new URLSearchParams(params).toString();
-    return request(`/stats?${queryString}`);
+    return request(`/messages/all?${queryString}`);
   },
-  
-  getTotalStats: () => request('/stats/total')
+  updateStatus: (id, status) => request(`/messages/${id}/status`, { method: 'PUT', body: JSON.stringify({ status }) }),
+  deleteMessage: (id) => request(`/messages/${id}`, { method: 'DELETE' })
+};
+
+// 友链相关
+export const friendLinkApi = {
+  getLinks: () => request('/friendlinks'),
+  createLink: (data) => request('/friendlinks', { method: 'POST', body: JSON.stringify(data) }),
+  updateLink: (id, data) => request(`/friendlinks/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  deleteLink: (id) => request(`/friendlinks/${id}`, { method: 'DELETE' })
+};
+
+// 网站设置
+export const settingsApi = {
+  getSettings: () => request('/settings'),
+  updateSettings: (data) => request('/settings', { method: 'PUT', body: JSON.stringify(data) })
+};
+
+// 访客统计
+export const visitorApi = {
+  trackVisit: (data) => request('/visitors/track', { method: 'POST', body: JSON.stringify(data) }),
+  getStats: () => request('/visitors/stats')
 };
 
 export default {
   auth: authApi,
   post: postApi,
   comment: commentApi,
-  stats: statsApi
+  category: categoryApi,
+  message: messageApi,
+  friendLink: friendLinkApi,
+  settings: settingsApi,
+  visitor: visitorApi
 };
