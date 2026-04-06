@@ -5,7 +5,7 @@
   "homepage": "https://shaoguang369.top",
   "dependencies": {
     "react": "^18.2.0",
-    "react-dom": "^18.2.0",
+    "react-dom": "^19.2.4",
     "vditor": "^3.11.2"
   },
   "scripts": {
