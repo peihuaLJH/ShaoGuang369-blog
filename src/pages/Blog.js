@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 
-const API = 'http://localhost:5000/api';
+const API = process.env.REACT_APP_API_BASE || 'http://localhost:5000/api';
+const API_HOST = process.env.REACT_APP_API_HOST || 'http://localhost:5000';
 
 const Blog = () => {
   const [posts, setPosts] = useState([]);
@@ -68,7 +69,7 @@ const Blog = () => {
               <Link to={`/post/${post._id}`} key={post._id} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div className="post-card">
                   {post.coverImage ? (
-                    <img src={post.coverImage.startsWith('http') ? post.coverImage : `http://localhost:5000${post.coverImage}`}
+                    <img src={post.coverImage.startsWith('http') ? post.coverImage : `${API_HOST}${post.coverImage}`}
                       alt={post.title} className="post-card-image" />
                   ) : (
                     <div className="post-card-image-placeholder">📝</div>

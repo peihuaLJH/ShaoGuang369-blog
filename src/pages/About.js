@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 
-const API = 'http://localhost:5000/api';
+const API = process.env.REACT_APP_API_BASE || 'http://localhost:5000/api';
+const API_HOST = process.env.REACT_APP_API_HOST || 'http://localhost:5000';
 
 const PALETTE = ['#7c6af7', '#4ade80', '#fb923c', '#38bdf8', '#f472b6', '#a3e635', '#94a3b8'];
 const DEVICE_LABEL = { desktop: '💻 电脑', android: '🤖 安卓', ios: '🍎 iOS', mobile: '📱 手机', tablet: '📟 平板' };
@@ -61,7 +62,7 @@ const About = ({ settings }) => {
   }, []);
 
   const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIxMDAiIGZpbGw9IiM4YjVjZjYiLz48dGV4dCB4PSIxMDAiIHk9IjExMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtc2l6ZT0iNTAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj7phbY8L3RleHQ+PC9zdmc+';
-  const avatarUrl = settings?.avatar ? `http://localhost:5000${settings.avatar}` : defaultAvatar;
+  const avatarUrl = settings?.avatar ? `${API_HOST}${settings.avatar}` : defaultAvatar;
   const quote = settings?.quote || '允许自己走慢点，但别停下';
   const siteDesc = settings?.siteDescription || '韶光的个人博客 - 分享跨境电商学习日常与生活随笔';
 

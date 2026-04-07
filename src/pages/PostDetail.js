@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 
-const API = 'http://localhost:5000/api';
+const API = process.env.REACT_APP_API_BASE || 'http://localhost:5000/api';
 
 const PostDetail = () => {
   const { id } = useParams();

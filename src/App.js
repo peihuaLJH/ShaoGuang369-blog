@@ -11,7 +11,7 @@ import FriendLinks from './pages/FriendLinks';
 import About from './pages/About';
 import AdminPanel from './admin/AdminPanel';
 
-const API = 'http://localhost:5000/api';
+const API = process.env.REACT_APP_API_BASE || 'http://localhost:5000/api';
 
 function App() {
   const [user, setUser] = useState(null);
