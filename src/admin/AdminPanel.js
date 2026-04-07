@@ -1,6 +1,43 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
+
+// ===== 扩展 Quill Image Blot 以支持宽高调整 =====
+const Quill = ReactQuill.Quill;
+if (Quill) {
+  const BaseImage = Quill.import('formats/image');
+  class ResizableImage extends BaseImage {
+    static formats(node) {
+      const f = {};
+      if (node.hasAttribute('width')) f.width = node.getAttribute('width');
+      if (node.hasAttribute('height')) f.height = node.getAttribute('height');
+      return f;
+    }
+    format(name, value) {
+      if (name === 'width' || name === 'height') {
+        if (value) this.domNode.setAttribute(name, value);
+        else this.domNode.removeAttribute(name);
+      } else {
+        super.format(name, value);
+      }
+    }
+  }
+  Quill.register(ResizableImage, true);
+}
+
+// 工具栏按钮配置（在组件外部，保持引用稳定）
+const TOOLBAR_CONTAINER = [
+  [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
+  ['bold', 'italic', 'underline', 'strike'],
+  [{ 'color': [] }, { 'background': [] }],
+  [{ 'align': [] }],
+  [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+  [{ 'indent': '-1' }, { 'indent': '+1' }],
+  ['blockquote', 'code-block'],
+  ['link', 'image', 'video'],
+  ['clean'],
+  ['format-painter', 'undo', 'redo']
+];
 
 const API = 'http://localhost:5000/api';
 const getToken = () => localStorage.getItem('token');
@@ -321,6 +358,11 @@ const PostEditor = ({ type, post, categories, onSave, onCancel, showToast }) => 
   const [previewMode, setPreviewMode] = useState(false);
   const autoSaveRef = useRef(null);
   const quillRef = useRef(null);
+  const formatPainterRef = useRef({ active: false, formats: null });
+  const lastSelectionRef = useRef(null);  // 追踪最后有效选区，工具栏点击后 getSelection() 返回 null
+  const [imageResizer, setImageResizer] = useState(null);
+  const [imageWidth, setImageWidth] = useState('');
+  const imageUploadRef = useRef(null);
 
   // 自动保存草稿
   useEffect(() => {
@@ -369,6 +411,7 @@ const PostEditor = ({ type, post, categories, onSave, onCancel, showToast }) => 
         { sel: 'button.ql-clean',             title: '清除格式' },
         { sel: 'button.ql-undo',              title: '撤销 (Ctrl+Z)' },
         { sel: 'button.ql-redo',              title: '恢复 (Ctrl+Y)' },
+        { sel: 'button.ql-format-painter',    title: '格式刷' },
       ];
       map.forEach(({ sel, title }) => {
         toolbar.querySelectorAll(sel).forEach(el => { el.setAttribute('title', title); });
@@ -405,6 +448,7 @@ const PostEditor = ({ type, post, categories, onSave, onCancel, showToast }) => 
     };
     input.click();
   };
+  imageUploadRef.current = handleImageUpload;
 
   const handleCoverUpload = async (e) => {
     const file = e.target?.files?.[0];
@@ -447,44 +491,136 @@ const PostEditor = ({ type, post, categories, onSave, onCancel, showToast }) => 
     }
   };
 
-  const quillModules = {
+  // 图片大小调整：应用宽度
+  const applyImageSize = (width) => {
+    if (!imageResizer?.img) return;
+    const quill = quillRef.current?.getEditor();
+    if (!quill) return;
+    const Q = ReactQuill.Quill;
+    const blot = Q && Q.find(imageResizer.img);
+    if (blot) {
+      if (width === 'auto') {
+        blot.format('width', false);
+        blot.format('height', false);
+        imageResizer.img.style.width = '';
+        imageResizer.img.style.height = '';
+      } else {
+        blot.format('width', String(width));
+        blot.format('height', false);
+        imageResizer.img.style.width = width + 'px';
+        imageResizer.img.style.height = 'auto';
+      }
+      quill.update('user');
+    }
+    setImageResizer(null);
+  };
+
+  // ===== 格式刷 + 图片点击：编辑器挂载后绑定 =====
+  useEffect(() => {
+    if (previewMode) return;
+    let cleanup = null;
+    const timer = setTimeout(() => {
+      const quill = quillRef.current?.getEditor();
+      if (!quill) return;
+
+      const INLINE_FORMATS = ['bold', 'italic', 'underline', 'strike', 'color', 'background', 'font', 'size', 'code'];
+
+      const onSelChange = (range, _old, source) => {
+        // 始终追踪最后有效选区（工具栏按钮点击会导致 getSelection() 失效）
+        if (range != null) lastSelectionRef.current = range;
+
+        if (!formatPainterRef.current.active || !range || range.length === 0) return;
+        const fmts = formatPainterRef.current.formats;
+        if (fmts) {
+          // 先逐一清除所有内联格式，再应用源格式，避免残留旧格式
+          INLINE_FORMATS.forEach(k => {
+            quill.formatText(range.index, range.length, k, fmts[k] !== undefined ? fmts[k] : false, 'user');
+          });
+        }
+        formatPainterRef.current.active = false;
+        formatPainterRef.current.formats = null;
+        const btn = document.querySelector('.ql-format-painter');
+        if (btn) btn.classList.remove('ql-active');
+      };
+
+      const onEditorClick = (e) => {
+        if (e.target.tagName === 'IMG') {
+          const container = quill.root.closest('.editor-container');
+          if (!container) return;
+          const cRect = container.getBoundingClientRect();
+          const iRect = e.target.getBoundingClientRect();
+          setImageResizer({
+            img: e.target,
+            top: iRect.bottom - cRect.top + 6,
+            left: iRect.left - cRect.left,
+            currentWidth: e.target.offsetWidth,
+            naturalWidth: e.target.naturalWidth,
+          });
+          setImageWidth(String(e.target.offsetWidth));
+        } else if (!e.target.closest('.img-resize-popover')) {
+          setImageResizer(null);
+        }
+      };
+
+      quill.on('selection-change', onSelChange);
+      quill.root.addEventListener('click', onEditorClick);
+      cleanup = () => {
+        quill.off('selection-change', onSelChange);
+        quill.root.removeEventListener('click', onEditorClick);
+      };
+    }, 300);
+    return () => { clearTimeout(timer); if (cleanup) cleanup(); };
+  }, [previewMode]);
+
+  useEffect(() => {
+    if (!imageResizer) return;
+    const handleDocClick = (e) => {
+      if (!e.target.closest('.img-resize-popover') && e.target.tagName !== 'IMG') {
+        setImageResizer(null);
+      }
+    };
+    document.addEventListener('mousedown', handleDocClick);
+    return () => document.removeEventListener('mousedown', handleDocClick);
+  }, [imageResizer]);
+
+  // ===== 关键修复：useMemo 保持 modules 引用稳定，防止 History 被重置 =====
+  const quillModules = useMemo(() => ({
     toolbar: {
-      container: [
-        [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-        ['bold', 'italic', 'underline', 'strike'],
-        [{ 'color': [] }, { 'background': [] }],
-        [{ 'align': [] }],
-        [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-        [{ 'indent': '-1' }, { 'indent': '+1' }],
-        ['blockquote', 'code-block'],
-        ['link', 'image', 'video'],
-        ['clean'],
-        ['undo', 'redo']
-      ],
+      container: TOOLBAR_CONTAINER,
       handlers: {
-        image: handleImageUpload,
+        image: () => imageUploadRef.current?.(),
         undo: () => {
           const quill = quillRef.current?.getEditor();
-          if (quill) {
-            const history = quill.getModule('history');
-            if (history) history.undo();
-          }
+          if (quill) { const h = quill.getModule('history'); if (h) h.undo(); }
         },
         redo: () => {
           const quill = quillRef.current?.getEditor();
-          if (quill) {
-            const history = quill.getModule('history');
-            if (history) history.redo();
+          if (quill) { const h = quill.getModule('history'); if (h) h.redo(); }
+        },
+        'format-painter': () => {
+          const quill = quillRef.current?.getEditor();
+          if (!quill) return;
+          const btn = document.querySelector('.ql-format-painter');
+          if (formatPainterRef.current.active) {
+            // 再次点击取消格式刷
+            formatPainterRef.current.active = false;
+            formatPainterRef.current.formats = null;
+            if (btn) btn.classList.remove('ql-active');
+          } else {
+            // 使用 lastSelectionRef 而非 getSelection()：
+            // 工具栏按钮点击瞬间编辑器失焦，getSelection() 返回 null
+            const range = lastSelectionRef.current;
+            if (!range) return;
+            // 明确传入 index/length，读取源文字的完整内联格式
+            formatPainterRef.current.formats = quill.getFormat(range.index, range.length);
+            formatPainterRef.current.active = true;
+            if (btn) btn.classList.add('ql-active');
           }
         }
       }
     },
-    history: {
-      delay: 1000,
-      maxStack: 100,
-      userOnly: true
-    }
-  };
+    history: { delay: 1000, maxStack: 100, userOnly: true }
+  }), []);
 
   return (
     <div>
@@ -573,9 +709,34 @@ const PostEditor = ({ type, post, categories, onSave, onCancel, showToast }) => 
                 modules={quillModules}
                 placeholder="开始编辑内容..."
               />
+              {imageResizer && (
+                <div className="img-resize-popover" style={{ top: imageResizer.top, left: imageResizer.left }}>
+                  <div className="img-resize-title">调整图片大小</div>
+                  <div className="img-resize-presets">
+                    {[25, 50, 75, 100].map(pct => {
+                      const w = Math.round(imageResizer.naturalWidth * pct / 100);
+                      return (
+                        <button key={pct} className="img-resize-preset-btn"
+                          onClick={() => pct === 100 ? applyImageSize('auto') : applyImageSize(w)}>
+                          {pct}%
+                        </button>
+                      );
+                    })}
+                  </div>
+                  <div className="img-resize-custom">
+                    <input type="number" className="img-resize-input" value={imageWidth}
+                      onChange={e => setImageWidth(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && applyImageSize(parseInt(imageWidth))}
+                      min="20" max="2000" />
+                    <span style={{ color: 'var(--text-muted)', fontSize: '0.78rem' }}>px</span>
+                    <button className="img-resize-apply-btn"
+                      onClick={() => applyImageSize(parseInt(imageWidth))}>应用</button>
+                  </div>
+                </div>
+              )}
             </div>
             <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: 4 }}>
-              💡 支持快捷键：Ctrl+B 加粗、Ctrl+I 斜体、Ctrl+U 下划线 | 自动保存草稿：每5秒
+              💡 快捷键：Ctrl+B 加粗 · Ctrl+I 斜体 · Ctrl+U 下划线 · Ctrl+Z 撤销 · Ctrl+Y 恢复 | 🖌️ 格式刷：先选中源文字点击格式刷，再选中目标文字 | 自动保存草稿：每5秒
             </p>
           </div>
         </>
