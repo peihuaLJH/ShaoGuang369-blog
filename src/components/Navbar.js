@@ -41,7 +41,7 @@ const Navbar = ({ settings, user, onAdminLogin, onLogout, theme, onThemeToggle }
     setLoginError('');
     setLoginLoading(true);
     try {
-      const res = await fetch(`${process.env.REACT_APP_API_BASE || 'http://localhost:5000/api'}/auth/login`, {
+      const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginData)
@@ -71,8 +71,7 @@ const Navbar = ({ settings, user, onAdminLogin, onLogout, theme, onThemeToggle }
   ];
 
   const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMTAwIiBoZWlnaHQ9IjEwMCIgdmlld0JveD0iMCAwIDEwMCAxMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iNTAiIGN5PSI1MCIgcj0iNTAiIGZpbGw9IiM4YjVjZjYiLz48dGV4dCB4PSI1MCIgeT0iNTUiIHRleHQtYW5jaG9yPSJtaWRkbGUiIGZpbGw9IndoaXRlIiBmb250LXNpemU9IjI4IiBmb250LWZhbWlseT0ic2Fucy1zZXJpZiI+6Z+2PC90ZXh0Pjwvc3ZnPg==';
-  const API_HOST = process.env.REACT_APP_API_HOST || 'http://localhost:5000';
-  const avatarUrl = settings?.avatar ? `${API_HOST}${settings.avatar}` : defaultAvatar;
+  const avatarUrl = settings?.avatar ? `${settings.avatar}` : defaultAvatar;
 
   return (
     <>

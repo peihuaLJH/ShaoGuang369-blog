@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const API = 'http://localhost:5000/api';
+const API = '/api';
 
 const Messages = () => {
   const [messages, setMessages] = useState([]);

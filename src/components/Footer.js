@@ -1,7 +1,7 @@
 import React, { useState, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 
-const SUBSCRIBE_API = `${process.env.REACT_APP_API_BASE || 'http://localhost:5000/api'}/subscribe`;
+const SUBSCRIBE_API = '/api/subscribe';
 
 const Footer = ({ settings }) => {
   const douyinUrl = settings?.douyinUrl || '#';

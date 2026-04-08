@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import StarBackground from '../components/StarBackground';
 
-const API = process.env.REACT_APP_API_BASE || 'http://localhost:5000/api';
-const API_HOST = process.env.REACT_APP_API_HOST || 'http://localhost:5000';
+const API = '/api';
 
 const Home = ({ settings }) => {
   const [latestBlogs, setLatestBlogs] = useState([]);
@@ -19,7 +18,7 @@ const Home = ({ settings }) => {
   }, []);
 
   const defaultAvatar = 'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjAwIiBoZWlnaHQ9IjIwMCIgdmlld0JveD0iMCAwIDIwMCAyMDAiIGZpbGw9Im5vbmUiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyI+PGNpcmNsZSBjeD0iMTAwIiBjeT0iMTAwIiByPSIxMDAiIGZpbGw9IiM4YjVjZjYiLz48dGV4dCB4PSIxMDAiIHk9IjExMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZmlsbD0id2hpdGUiIGZvbnQtc2l6ZT0iNTAiIGZvbnQtZmFtaWx5PSJzYW5zLXNlcmlmIj7phbY8L3RleHQ+PC9zdmc+';
-  const avatarUrl = settings?.avatar ? `${API_HOST}${settings.avatar}` : defaultAvatar;
+  const avatarUrl = settings?.avatar ? `${settings.avatar}` : defaultAvatar;
   const quote = settings?.quote || '允许自己走慢点，但别停下';
 
   return (
@@ -62,7 +61,7 @@ const Home = ({ settings }) => {
               <Link to={`/post/${post._id}`} key={post._id} style={{ textDecoration: 'none', color: 'inherit' }}>
                 <div className="post-card">
                   {post.coverImage ? (
-                    <img src={post.coverImage.startsWith('http') ? post.coverImage : `${API_HOST}${post.coverImage}`} alt={post.title} className="post-card-image" />
+                    <img src={post.coverImage} alt={post.title} className="post-card-image" />
                   ) : (
                     <div className="post-card-image-placeholder">📝</div>
                   )}

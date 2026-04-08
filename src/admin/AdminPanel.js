@@ -39,8 +39,7 @@ const TOOLBAR_CONTAINER = [
   ['format-painter', 'undo', 'redo']
 ];
 
-const API = process.env.REACT_APP_API_BASE || 'http://localhost:5000/api';
-const API_HOST = process.env.REACT_APP_API_HOST || 'http://localhost:5000';
+const API = '/api';
 const getToken = () => localStorage.getItem('token');
 const authHeaders = () => ({ 'Content-Type': 'application/json', 'Authorization': `Bearer ${getToken()}` });
 
@@ -442,7 +441,7 @@ const PostEditor = ({ type, post, categories, onSave, onCancel, showToast }) => 
           const quill = quillRef.current?.getEditor();
           if (quill) {
             const range = quill.getSelection(true);
-            quill.insertEmbed(range.index, 'image', `${API_HOST}${data.url}`);
+            quill.insertEmbed(range.index, 'image', `${data.url}`);
           }
         }
       } catch (err) { showToast('上传失败: ' + err.message, 'error'); }
@@ -687,7 +686,7 @@ const PostEditor = ({ type, post, categories, onSave, onCancel, showToast }) => 
                 </label>
               </div>
               {form.coverImage && (
-                <img src={form.coverImage.startsWith('http') ? form.coverImage : `${API_HOST}${form.coverImage}`}
+                <img src={form.coverImage}
                   alt="封面预览" style={{ maxHeight: 150, borderRadius: 8, marginTop: 8 }} />
               )}
             </div>
@@ -1006,7 +1005,7 @@ const FriendManager = ({ showToast }) => {
         <tbody>
           {links.map(l => (
             <tr key={l._id}>
-              <td><img src={l.avatar ? (l.avatar.startsWith('http') ? l.avatar : `${API_HOST}${l.avatar}`) : ''} alt="" style={{ width: 32, height: 32, borderRadius: '50%' }} /></td>
+              <td><img src={l.avatar || ''} alt="" style={{ width: 32, height: 32, borderRadius: '50%' }} /></td>
               <td>{l.name}</td>
               <td><a href={l.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem' }}>{l.url}</a></td>
               <td className="actions">
@@ -1060,7 +1059,7 @@ const SettingsManager = ({ showToast, onSettingsChange }) => {
     }
   };
 
-  const avatarPreview = settings.avatar ? (settings.avatar.startsWith('http') ? settings.avatar : `${API_HOST}${settings.avatar}`) : '';
+  const avatarPreview = settings.avatar || '';
 
   return (
     <div>

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 
-const API = process.env.REACT_APP_API_BASE || 'http://localhost:5000/api';
-const API_HOST = process.env.REACT_APP_API_HOST || 'http://localhost:5000';
+const API = '/api';
 
 const FriendLinks = () => {
   const [links, setLinks] = useState([]);
@@ -31,7 +30,7 @@ const FriendLinks = () => {
           {links.map(link => (
             <a key={link._id} href={link.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
               <div className="friend-card">
-                <img src={link.avatar ? (link.avatar.startsWith('http') ? link.avatar : `${API_HOST}${link.avatar}`) : defaultAvatar(link.name)}
+                <img src={link.avatar ? link.avatar : defaultAvatar(link.name)}
                   alt={link.name} className="friend-avatar" />
                 <div className="friend-info">
                   <div className="friend-name">{link.name}</div>
