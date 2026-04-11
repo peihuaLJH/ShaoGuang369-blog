@@ -3,9 +3,9 @@ node_modules/
 backend/node_modules/
 
 # 生产构建输出
-build/
 
-# 环境变量（含敏感信息，不上传）
+
+# 环境变量（含敏感信息，不上传�?
 .env
 .env.local
 .env.development.local
@@ -24,6 +24,6 @@ yarn-error.log*
 .DS_Store
 Thumbs.db
 
-# 编辑器配置
+# 编辑器配�?
 .vscode/
 .idea/
