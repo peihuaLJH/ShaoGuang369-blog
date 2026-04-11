@@ -41,7 +41,7 @@ const Navbar = ({ settings, user, onAdminLogin, onLogout, theme, onThemeToggle }
     setLoginError('');
     setLoginLoading(true);
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(`${process.env.REACT_APP_API_BASE || '/api'}/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(loginData)
