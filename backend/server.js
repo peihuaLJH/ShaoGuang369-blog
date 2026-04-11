@@ -60,6 +60,7 @@ const friendlinkRoutes = require('./routes/friendlinks');
 const settingsRoutes = require('./routes/settings');
 const visitorRoutes = require('./routes/visitors');
 const uploadRoutes = require('./routes/upload');
+const subscribeRoutes = require('./routes/subscribe');
 
 app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
@@ -70,6 +71,7 @@ app.use('/api/friendlinks', friendlinkRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/visitors', visitorRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/subscribe', subscribeRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', message: '服务器运行正常' });
