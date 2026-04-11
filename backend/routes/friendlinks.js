@@ -14,8 +14,10 @@ router.get('/', async (req, res) => {
 
 router.post('/', auth, adminOnly, async (req, res) => {
   try {
-    const { name, avatar, url, description } = req.body;
+    const { name, avatar, description } = req.body;
+    let { url } = req.body;
     if (!name || !url) return res.status(400).json({ message: '名称和链接必填' });
+    if (!/^https?:\/\//i.test(url)) url = 'https://' + url;
     const link = await FriendLink.create({ name, avatar, url, description });
     res.status(201).json(link);
   } catch (error) {
@@ -25,7 +27,9 @@ router.post('/', auth, adminOnly, async (req, res) => {
 
 router.put('/:id', auth, adminOnly, async (req, res) => {
   try {
-    const { name, avatar, url, description } = req.body;
+    const { name, avatar, description } = req.body;
+    let { url } = req.body;
+    if (url && !/^https?:\/\//i.test(url)) url = 'https://' + url;
     const link = await FriendLink.findByIdAndUpdate(req.params.id, { name, avatar, url, description }, { new: true });
     if (!link) return res.status(404).json({ message: '友链不存在' });
     res.json(link);

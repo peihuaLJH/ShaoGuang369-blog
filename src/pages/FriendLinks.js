@@ -27,8 +27,10 @@ const FriendLinks = () => {
         <div className="no-data">暂无友链</div>
       ) : (
         <div className="friend-links-grid">
-          {links.map(link => (
-            <a key={link._id} href={link.url} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
+          {links.map(link => {
+            const href = link.url && !/^https?:\/\//i.test(link.url) ? `https://${link.url}` : link.url;
+            return (
+            <a key={link._id} href={href} target="_blank" rel="noopener noreferrer" style={{ textDecoration: 'none', color: 'inherit' }}>
               <div className="friend-card">
                 <img src={link.avatar ? link.avatar : defaultAvatar(link.name)}
                   alt={link.name} className="friend-avatar" />
@@ -39,7 +41,8 @@ const FriendLinks = () => {
                 </div>
               </div>
             </a>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
