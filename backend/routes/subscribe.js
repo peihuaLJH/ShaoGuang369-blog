@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const svgCaptcha = require('svg-captcha');
 const Subscriber = require('../models/Subscriber');
+const { sendSubscriptionConfirmation } = require('../utils/emailService');
 
 // 内存存储验证码（生产环境可换 Redis）
 const captchaStore = new Map();
@@ -64,6 +65,8 @@ router.post('/', async (req, res) => {
       return res.json({ message: '该邮箱已订阅，感谢您的关注！' });
     }
     await Subscriber.create({ email: email.trim().toLowerCase() });
+    // 发送订阅成功确认邮件
+    sendSubscriptionConfirmation(email.trim().toLowerCase());
     res.json({ message: '订阅成功！感谢您的关注！' });
   } catch (err) {
     console.error('订阅失败:', err);

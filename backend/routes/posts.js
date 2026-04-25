@@ -3,6 +3,8 @@ const router = express.Router();
 const Post = require('../models/Post');
 const Comment = require('../models/Comment');
 const { auth, adminOnly } = require('../middleware/auth');
+const Subscriber = require('../models/Subscriber');
+const { sendNewPostNotification } = require('../utils/emailService');
 
 // 获取文章列表（公开）
 router.get('/', async (req, res) => {
@@ -64,6 +66,13 @@ router.post('/', auth, adminOnly, async (req, res) => {
       author: req.user._id
     });
     await post.save();
+    // 发布状态时通知所有订阅者
+    if (post.status === 'published') {
+      const subscribers = await Subscriber.find();
+      if (subscribers.length > 0) {
+        sendNewPostNotification(subscribers, post);
+      }
+    }
     res.status(201).json(post);
   } catch (error) {
     res.status(500).json({ message: '服务器错误' });

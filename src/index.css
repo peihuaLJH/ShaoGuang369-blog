@@ -493,6 +493,24 @@ body.light #star-canvas { opacity: 0.12; }
 .editor-container .ql-container { background: var(--bg-main) !important; border-color: var(--border) !important; border-radius: 0 0 var(--radius-sm) var(--radius-sm) !important; color: var(--text-main) !important; font-size: 1rem !important; min-height: 400px; }
 .editor-container .ql-editor { min-height: 400px; line-height: 1.8; color: var(--text-main) !important; }
 .editor-container .ql-editor.ql-blank::before { color: var(--text-muted) !important; }
+
+/* ===== 夜间模式修复：黑色/深色内联字色在深色背景上不可见 ===== */
+/* 覆盖 Quill 在子元素上写入的 color: rgb(0,0,0) / #000 / black 等深色 */
+body:not(.light) .editor-container .ql-editor [style*="color: rgb(0"],
+body:not(.light) .editor-container .ql-editor [style*="color:#000"],
+body:not(.light) .editor-container .ql-editor [style*="color: #000"],
+body:not(.light) .editor-container .ql-editor [style*="color: black"],
+body:not(.light) .editor-container .ql-editor .ql-color-black,
+body:not(.light) .post-detail-content [style*="color: rgb(0"],
+body:not(.light) .post-detail-content [style*="color:#000"],
+body:not(.light) .post-detail-content [style*="color: #000"],
+body:not(.light) .post-detail-content [style*="color: black"],
+body:not(.light) .post-detail-content .ql-color-black { color: var(--text-main) !important; }
+/* 深色背景色同理（黑色 background 会遮住文字） */
+body:not(.light) .editor-container .ql-editor [style*="background-color: rgb(0"],
+body:not(.light) .editor-container .ql-editor [style*="background-color: black"],
+body:not(.light) .post-detail-content [style*="background-color: rgb(0"],
+body:not(.light) .post-detail-content [style*="background-color: black"] { background-color: var(--bg-card-2) !important; }
 .editor-container .ql-snow .ql-picker-options { background: var(--bg-card) !important; border-color: var(--border) !important; z-index: 10000 !important; position: absolute !important; }
 .editor-container .ql-snow .ql-picker-item { color: var(--text-main) !important; }
 .editor-container .ql-toolbar .ql-hidden { visibility: hidden; }
