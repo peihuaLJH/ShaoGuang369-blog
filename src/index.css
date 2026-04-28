@@ -300,11 +300,25 @@ body.light #star-canvas { opacity: 0.12; }
 .comment-author { font-weight: 600; font-size: 0.9rem; }
 .comment-time { color: var(--text-muted); font-size: 0.76rem; margin-left: 9px; }
 .comment-body { color: var(--text-dim); margin-top: 5px; font-size: 0.86rem; }
+.comment-reply { margin: 10px 0 0 12px; padding: 8px 12px; border-left: 2px solid var(--border-focus); background: var(--bg-main); border-radius: 0 6px 6px 0; }
+.reply-form { margin: 10px 0 4px 12px; padding: 12px; background: var(--bg-main); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.reply-form-row { display: flex; gap: 8px; margin-bottom: 8px; }
+.reply-form input, .reply-form textarea { width: 100%; padding: 7px 11px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-size: 0.85rem; outline: none; font-family: inherit; transition: var(--transition); box-sizing: border-box; }
+.reply-form input:focus, .reply-form textarea:focus { border-color: var(--border-focus); }
+.reply-form textarea { resize: vertical; min-height: 68px; }
 
 /* ===== 留言板 ===== */
 .message-wall { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 16px; }
 .message-card { background: var(--bg-card); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px; transition: var(--transition); }
 .message-card:hover { border-color: var(--border-focus); }
+.message-reply { margin-top: 10px; padding: 8px 10px; border-left: 2px solid var(--border-focus); background: var(--bg-main); border-radius: 0 6px 6px 0; }
+.message-reply-author { font-weight: 600; font-size: 0.82rem; }
+.message-reply-time { color: var(--text-muted); font-size: 0.72rem; margin-left: 6px; }
+.message-reply-body { color: var(--text-dim); font-size: 0.82rem; margin-top: 2px; line-height: 1.5; }
+.message-reply-form { margin-top: 10px; padding: 10px; background: var(--bg-main); border-radius: var(--radius-sm); border: 1px solid var(--border); }
+.message-reply-form input, .message-reply-form textarea { width: 100%; padding: 7px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--bg-card); color: var(--text-main); font-size: 0.82rem; outline: none; font-family: inherit; transition: var(--transition); box-sizing: border-box; }
+.message-reply-form input:focus, .message-reply-form textarea:focus { border-color: var(--border-focus); }
+.message-reply-form textarea { resize: vertical; min-height: 58px; }
 .message-header { display: flex; align-items: center; gap: 7px; margin-bottom: 7px; }
 .message-nickname { font-weight: 600; font-size: 0.9rem; }
 .message-time { color: var(--text-muted); font-size: 0.74rem; }

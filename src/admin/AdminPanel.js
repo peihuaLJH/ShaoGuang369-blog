@@ -832,12 +832,15 @@ const CommentManager = ({ showToast }) => {
         </div>
       </div>
       <table className="admin-table">
-        <thead><tr><th>作者</th><th>内容</th><th>状态</th><th>日期</th><th>操作</th></tr></thead>
+        <thead><tr><th>作者</th><th>所属文章</th><th>内容</th><th>状态</th><th>日期</th><th>操作</th></tr></thead>
         <tbody>
           {comments.map(c => (
             <tr key={c._id}>
               <td>{c.author}</td>
-              <td style={{ maxWidth: 300, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.content}</td>
+              <td style={{ maxWidth: 180, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                {c.post?.title || '已删除文章'}
+              </td>
+              <td style={{ maxWidth: 260, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{c.content}</td>
               <td style={{ color: c.status === 'approved' ? '#22c55e' : c.status === 'pending' ? 'var(--gold)' : '#ef4444' }}>
                 {c.status === 'approved' ? '已通过' : c.status === 'pending' ? '待审核' : '已拒绝'}
               </td>

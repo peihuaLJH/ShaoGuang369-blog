@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const Comment = require('../models/Comment');
+const Post = require('../models/Post');
 const User = require('../models/User');
 const jwt = require('jsonwebtoken');
 
@@ -64,7 +65,7 @@ router.get('/', auth, async (req, res) => {
 
 router.post('/', async (req, res) => {
   try {
-    const { content, author, email, postId } = req.body;
+    const { content, author, email, postId, parentId } = req.body;
     
     if (!email.includes('@')) {
       return res.status(400).json({ message: '邮箱格式不正确' });
@@ -74,7 +75,8 @@ router.post('/', async (req, res) => {
       content,
       author,
       email,
-      post: postId
+      post: postId,
+      parentId: parentId || null
     });
     
     await comment.save();
@@ -92,16 +94,23 @@ router.put('/:id/status', auth, async (req, res) => {
     }
     
     const { status } = req.body;
-    const comment = await Comment.findByIdAndUpdate(
-      req.params.id,
-      { status },
-      { new: true }
-    );
-    
+    const comment = await Comment.findById(req.params.id);
     if (!comment) {
       return res.status(404).json({ message: '评论不存在' });
     }
-    
+
+    const wasApproved = comment.status === 'approved';
+    const willApprove = status === 'approved';
+
+    comment.status = status;
+    await comment.save();
+
+    if (!wasApproved && willApprove) {
+      await Post.findByIdAndUpdate(comment.post, { $inc: { commentCount: 1 } });
+    } else if (wasApproved && !willApprove) {
+      await Post.findByIdAndUpdate(comment.post, { $inc: { commentCount: -1 } });
+    }
+
     res.json(comment);
   } catch (error) {
     console.error('审核评论错误:', error);
@@ -115,11 +124,18 @@ router.delete('/:id', auth, async (req, res) => {
       return res.status(403).json({ message: '无权操作' });
     }
     
-    const comment = await Comment.findByIdAndDelete(req.params.id);
+    const comment = await Comment.findById(req.params.id);
     if (!comment) {
       return res.status(404).json({ message: '评论不存在' });
     }
-    
+
+    const wasApproved = comment.status === 'approved';
+    await comment.deleteOne();
+
+    if (wasApproved) {
+      await Post.findByIdAndUpdate(comment.post, { $inc: { commentCount: -1 } });
+    }
+
     res.json({ message: '评论已删除' });
   } catch (error) {
     console.error('删除评论错误:', error);

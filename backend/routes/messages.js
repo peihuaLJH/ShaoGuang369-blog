@@ -6,7 +6,7 @@ const { auth, adminOnly } = require('../middleware/auth');
 // 获取已审核通过的留言（公开）
 router.get('/', async (req, res) => {
   try {
-    const { page = 1, limit = 20 } = req.query;
+    const { page = 1, limit = 200 } = req.query;
     const messages = await Message.find({ status: 'approved' })
       .sort({ createdAt: -1 })
       .skip((page - 1) * limit)
@@ -33,7 +33,7 @@ router.get('/all', auth, adminOnly, async (req, res) => {
 // 提交留言
 router.post('/', async (req, res) => {
   try {
-    const { nickname, email, content, website } = req.body;
+    const { nickname, email, content, website, parentId } = req.body;
     if (!nickname || !nickname.trim()) return res.status(400).json({ message: '请输入昵称' });
     if (!email || !email.includes('@')) return res.status(400).json({ message: '请输入有效邮箱' });
     if (!content || !content.trim()) return res.status(400).json({ message: '请输入留言内容' });
@@ -41,7 +41,8 @@ router.post('/', async (req, res) => {
       nickname: nickname.trim(),
       email: email.trim(),
       content: content.trim(),
-      website: website ? website.trim() : ''
+      website: website ? website.trim() : '',
+      parentId: parentId || null
     });
     res.status(201).json({ message: '留言已提交，等待审核' });
   } catch (error) {
