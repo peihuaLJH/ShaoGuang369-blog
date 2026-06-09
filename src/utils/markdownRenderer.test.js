@@ -1,4 +1,4 @@
-import { parseFrontmatter, renderMarkdown } from './markdownRenderer';
+import { parseFrontmatter, renderMarkdown, importMarkdownFile } from './markdownRenderer';
 
 describe('parseFrontmatter', () => {
   test('无 frontmatter 时原样返回', () => {
@@ -72,5 +72,43 @@ describe('renderMarkdown', () => {
   test('空输入返回空串', () => {
     expect(renderMarkdown('')).toBe('');
     expect(renderMarkdown(null)).toBe('');
+  });
+});
+
+describe('importMarkdownFile', () => {
+  test('frontmatter 优先取标题与各字段', () => {
+    const md = `---\ntitle: A\ntags: [x, y]\ncategory: 技术\nsummary: 摘要\ncover: http://e/c.png\n---\n正文`;
+    const r = importMarkdownFile(md, 'file.md');
+    expect(r.title).toBe('A');
+    expect(r.tags).toBe('x, y');
+    expect(r.category).toBe('技术');
+    expect(r.summary).toBe('摘要');
+    expect(r.coverImage).toBe('http://e/c.png');
+    expect(r.content).toBe('正文');
+  });
+
+  test('无 frontmatter 时取首个 # 标题并从正文剥离', () => {
+    const md = `> 引用\n\n# 真标题\n\n正文段落`;
+    const r = importMarkdownFile(md, 'fallback.md');
+    expect(r.title).toBe('真标题');
+    expect(r.content).not.toMatch(/#\s*真标题/);
+    expect(r.content).toContain('正文段落');
+    expect(r.content).toContain('> 引用');
+  });
+
+  test('既无 frontmatter 也无 H1 时用文件名', () => {
+    const r = importMarkdownFile('纯正文', '我的笔记.md');
+    expect(r.title).toBe('我的笔记');
+  });
+
+  test('tags 为字符串也兼容', () => {
+    const r = importMarkdownFile(`---\ntags: a, b\n---\nx`, 'f.md');
+    expect(r.tags).toBe('a, b');
+  });
+
+  test('category 为数组时取首个；别名键 description 作摘要', () => {
+    const r = importMarkdownFile(`---\ncategories: [前端, 笔记]\ndescription: 简介\n---\nx`, 'f.md');
+    expect(r.category).toBe('前端');
+    expect(r.summary).toBe('简介');
   });
 });

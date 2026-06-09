@@ -76,3 +76,48 @@ export function renderMarkdown(md) {
   });
   return html;
 }
+
+function normalizeTags(t) {
+  if (Array.isArray(t)) return t.map((x) => String(x).trim()).filter(Boolean).join(', ');
+  if (typeof t === 'string') return t.split(/[,，]/).map((x) => x.trim()).filter(Boolean).join(', ');
+  return '';
+}
+
+function firstOf(data, keys) {
+  for (const k of keys) {
+    if (data[k] != null && data[k] !== '') return data[k];
+  }
+  return '';
+}
+
+/**
+ * 解析一个 markdown 笔记文件，抽取文章各字段。
+ * 标题优先级：frontmatter.title → 正文首个 # H1（并从正文剥离）→ 文件名。
+ * @returns {{ title, content, tags, category, summary, coverImage }}
+ */
+export function importMarkdownFile(text, filename = '') {
+  const { data, content } = parseFrontmatter(text);
+  let body = content;
+  let title = data.title ? String(data.title) : '';
+
+  if (!title) {
+    const h1 = body.match(/^#\s+(.+?)\s*$/m);
+    if (h1) {
+      title = h1[1].trim();
+      body = body.replace(h1[0], '').replace(/^\s*\n/, '');
+    }
+  }
+  if (!title) title = filename.replace(/\.(md|markdown|txt)$/i, '') || '未命名';
+
+  let category = firstOf(data, ['category', 'categories']);
+  if (Array.isArray(category)) category = category[0] || '';
+
+  return {
+    title,
+    content: body.trim(),
+    tags: normalizeTags(data.tags),
+    category: category ? String(category) : '',
+    summary: String(firstOf(data, ['summary', 'description', 'excerpt']) || ''),
+    coverImage: String(firstOf(data, ['cover', 'coverImage', 'banner']) || ''),
+  };
+}
