@@ -8,6 +8,7 @@ const PostSchema = new mongoose.Schema({
   category: { type: String, default: '' },
   type: { type: String, default: 'blog', enum: ['blog', 'essay'] },
   status: { type: String, default: 'published', enum: ['draft', 'published'] },
+  contentFormat: { type: String, default: 'html', enum: ['html', 'markdown'] },
   author: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   likeCount: { type: Number, default: 0 },
   viewCount: { type: Number, default: 0 },

@@ -59,10 +59,11 @@ router.get('/:id', async (req, res) => {
 // 创建文章
 router.post('/', auth, adminOnly, async (req, res) => {
   try {
-    const { title, content, summary, coverImage, category, tags, type, status } = req.body;
+    const { title, content, summary, coverImage, category, tags, type, status, contentFormat } = req.body;
     const post = new Post({
       title, content, summary, coverImage, category,
       tags: tags || [], type: type || 'blog', status: status || 'published',
+      contentFormat: contentFormat || 'html',
       author: req.user._id
     });
     await post.save();
@@ -82,10 +83,11 @@ router.post('/', auth, adminOnly, async (req, res) => {
 // 更新文章
 router.put('/:id', auth, adminOnly, async (req, res) => {
   try {
-    const { title, content, summary, coverImage, category, tags, type, status } = req.body;
+    const { title, content, summary, coverImage, category, tags, type, status, contentFormat } = req.body;
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ message: '文章不存在' });
     Object.assign(post, { title, content, summary, coverImage, category, tags, type, status });
+    if (contentFormat) post.contentFormat = contentFormat;
     post.updatedAt = Date.now();
     await post.save();
     res.json(post);
