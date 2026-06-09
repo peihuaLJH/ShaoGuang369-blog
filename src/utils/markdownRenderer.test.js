@@ -1,4 +1,8 @@
+import fs from 'fs';
+import path from 'path';
 import { parseFrontmatter, renderMarkdown, importMarkdownFile } from './markdownRenderer';
+
+const readFixture = (f) => fs.readFileSync(path.join(__dirname, '__tests__', 'fixtures', f), 'utf8');
 
 describe('parseFrontmatter', () => {
   test('无 frontmatter 时原样返回', () => {
@@ -110,5 +114,28 @@ describe('importMarkdownFile', () => {
     const r = importMarkdownFile(`---\ncategories: [前端, 笔记]\ndescription: 简介\n---\nx`, 'f.md');
     expect(r.category).toBe('前端');
     expect(r.summary).toBe('简介');
+  });
+});
+
+describe('真实笔记结构集成测试', () => {
+  test('笔记A($$)：标题提取 + 公式与格式渲染', () => {
+    const r = importMarkdownFile(readFixture('note-dollar.md'), 'note-dollar.md');
+    expect(r.title).toContain('TikTok');        // 来自首个 # 标题
+    const html = renderMarkdown(r.content);
+    expect(html).toContain('katex');            // 公式已渲染
+    expect(html).not.toContain('$$');           // 无残留分隔符
+    expect(html).toMatch(/<h2/);                // 二级标题
+    expect(html).toContain('<blockquote>');     // 引用块
+    expect(html).toContain('<strong>');         // 加粗
+    expect(html).toContain('<hr');              // 分隔线
+  });
+
+  test('笔记B(\\[)：公式渲染', () => {
+    const r = importMarkdownFile(readFixture('note-bracket.md'), 'note-bracket.md');
+    const html = renderMarkdown(r.content);
+    expect(html).toContain('katex');
+    expect(html).not.toContain('\\[');
+    expect(html).not.toContain('\\frac');       // frac 已被 katex 消化
+    expect(html).toMatch(/<li>/);               // 列表
   });
 });
