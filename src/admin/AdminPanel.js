@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import ReactQuill from 'react-quill-new';
 import 'react-quill-new/dist/quill.snow.css';
+import { renderMarkdown, importMarkdownFile } from '../utils/markdownRenderer';
 
 // ===== 扩展 Quill Image Blot 以支持宽高调整 =====
 const Quill = ReactQuill.Quill;
@@ -352,6 +353,7 @@ const PostEditor = ({ type, post, categories, onSave, onCancel, showToast }) => 
     category: post?.category || '',
     tags: post?.tags?.join(', ') || '',
     status: post?.status || 'published',
+    contentFormat: post?.contentFormat || 'html',
     type: type
   });
   const [saving, setSaving] = useState(false);
@@ -462,6 +464,36 @@ const PostEditor = ({ type, post, categories, onSave, onCancel, showToast }) => 
       const data = await res.json();
       if (data.url) setForm({ ...form, coverImage: data.url });
     } catch (err) { showToast('上传失败: ' + err.message, 'error'); }
+  };
+
+  // 一键导入 Markdown 笔记：解析 frontmatter 填充字段，正文原样存为 markdown
+  const handleImportMarkdown = (e) => {
+    const file = e.target?.files?.[0];
+    if (e.target) e.target.value = '';
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      try {
+        const r = importMarkdownFile(String(reader.result), file.name);
+        if (form.content.trim() && !window.confirm('将用导入内容覆盖当前编辑内容，确定？')) return;
+        setForm(f => ({
+          ...f,
+          title: r.title || f.title,
+          content: r.content,
+          contentFormat: 'markdown',
+          tags: r.tags || f.tags,
+          summary: r.summary || f.summary,
+          category: type === 'blog' ? (r.category || f.category) : f.category,
+          coverImage: type === 'blog' ? (r.coverImage || f.coverImage) : f.coverImage,
+        }));
+        const parts = ['标题', r.tags && '标签', r.summary && '摘要', r.category && '分类'].filter(Boolean);
+        showToast(`已导入 Markdown（${parts.join('、')}），公式将在预览/发布时渲染`);
+      } catch (err) {
+        showToast('导入失败: ' + err.message, 'error');
+      }
+    };
+    reader.onerror = () => showToast('文件读取失败', 'error');
+    reader.readAsText(file);
   };
 
   const handleSave = async () => {
@@ -627,6 +659,11 @@ const PostEditor = ({ type, post, categories, onSave, onCancel, showToast }) => 
       <div className="admin-header">
         <h2 className="admin-title">{post ? '编辑' : '新建'}{type === 'blog' ? '文章' : '随笔'}</h2>
         <div style={{ display: 'flex', gap: 10 }}>
+          <label className="btn-secondary" style={{ cursor: 'pointer', whiteSpace: 'nowrap' }}
+            title="选择 .md 文件，自动填入标题/正文/标签等，支持 LaTeX 公式">
+            📥 导入 Markdown
+            <input type="file" accept=".md,.markdown,.txt,text/markdown" onChange={handleImportMarkdown} style={{ display: 'none' }} />
+          </label>
           <button className="btn-secondary" onClick={() => setPreviewMode(!previewMode)}>
             {previewMode ? '编辑' : '预览'}
           </button>
@@ -640,7 +677,8 @@ const PostEditor = ({ type, post, categories, onSave, onCancel, showToast }) => 
       {previewMode ? (
         <div className="glass-card" style={{ padding: 30 }}>
           <h1 style={{ marginBottom: 20 }}>{form.title || '无标题'}</h1>
-          <div className="post-detail-content" dangerouslySetInnerHTML={{ __html: form.content }} />
+          <div className="post-detail-content"
+            dangerouslySetInnerHTML={{ __html: form.contentFormat === 'markdown' ? renderMarkdown(form.content) : form.content }} />
         </div>
       ) : (
         <>
@@ -657,6 +695,9 @@ const PostEditor = ({ type, post, categories, onSave, onCancel, showToast }) => 
                 <select className="form-select" value={form.category} onChange={e => setForm({...form, category: e.target.value})}>
                   <option value="">选择分类</option>
                   {categories.map(c => <option key={c._id} value={c.name}>{c.name}</option>)}
+                  {form.category && !categories.some(c => c.name === form.category) && (
+                    <option value={form.category}>{form.category}（导入）</option>
+                  )}
                 </select>
               </div>
             )}
@@ -700,6 +741,24 @@ const PostEditor = ({ type, post, categories, onSave, onCancel, showToast }) => 
 
           <div className="form-group">
             <label>内容</label>
+            {form.contentFormat === 'markdown' ? (
+              <>
+                <textarea className="form-textarea"
+                  style={{ minHeight: 380, fontFamily: 'ui-monospace, Menlo, Consolas, monospace', fontSize: '0.9rem', lineHeight: 1.6 }}
+                  value={form.content}
+                  onChange={e => setForm({ ...form, content: e.target.value })}
+                  placeholder="Markdown 源码（支持 $$ 行间公式 $$、行内 $公式$、列表、引用、加粗等）" />
+                <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: 4 }}>
+                  📄 当前为 <b>Markdown 模式</b>（导入的笔记）。点上方「预览」查看渲染效果（含数学公式）。
+                  <button type="button" className="btn-secondary"
+                    style={{ marginLeft: 10, padding: '2px 10px', fontSize: '0.75rem' }}
+                    onClick={() => { if (window.confirm('转为富文本编辑？数学公式等 Markdown 专有格式可能丢失，建议保持 Markdown 模式。')) setForm({ ...form, contentFormat: 'html' }); }}>
+                    转富文本
+                  </button>
+                </p>
+              </>
+            ) : (
+              <>
             <div className="editor-container">
               <ReactQuill
                 ref={quillRef}
@@ -738,6 +797,8 @@ const PostEditor = ({ type, post, categories, onSave, onCancel, showToast }) => 
             <p style={{ color: 'var(--text-muted)', fontSize: '0.78rem', marginTop: 4 }}>
               💡 快捷键：Ctrl+B 加粗 · Ctrl+I 斜体 · Ctrl+U 下划线 · Ctrl+Z 撤销 · Ctrl+Y 恢复 | 🖌️ 格式刷：先选中源文字点击格式刷，再选中目标文字 | 自动保存草稿：每5秒
             </p>
+              </>
+            )}
           </div>
         </>
       )}
