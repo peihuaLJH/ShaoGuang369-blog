@@ -278,6 +278,13 @@ body.light #star-canvas { opacity: 0.12; }
 .post-detail-content .ql-align-center { text-align: center; }
 .post-detail-content .ql-align-right  { text-align: right;  }
 .post-detail-content .ql-align-justify { text-align: justify; }
+/* Markdown 导入内容补充：分隔线 / 表格 / 数学公式 */
+.post-detail-content hr { border: none; border-top: 1px solid var(--border); margin: 1.6em 0; }
+.post-detail-content table { border-collapse: collapse; margin: 1em 0; width: auto; max-width: 100%; }
+.post-detail-content th,.post-detail-content td { border: 1px solid var(--border); padding: 7px 13px; text-align: left; }
+.post-detail-content th { background: var(--bg-card-2); font-weight: 600; }
+.post-detail-content .katex-display { overflow-x: auto; overflow-y: hidden; padding: 0.3em 0; margin: 1em 0; }
+.post-detail-content .katex-error { color: #ef4444; font-family: ui-monospace, Consolas, monospace; }
 .post-actions { display: flex; gap: 12px; margin: 26px 0; padding: 16px 0; border-top: 1px solid var(--border); }
 .action-btn { display: flex; align-items: center; gap: 6px; padding: 6px 17px; border-radius: 16px; border: 1px solid var(--border); background: transparent; color: var(--text-dim); cursor: pointer; font-size: 0.84rem; transition: var(--transition); }
 .action-btn:hover { border-color: var(--accent); color: var(--accent); }
