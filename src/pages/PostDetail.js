@@ -1,5 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';const API = '/api';
+import { useParams, useNavigate } from 'react-router-dom';
+import { renderMarkdown } from '../utils/markdownRenderer';
+const API = '/api';
 
 const PostDetail = () => {
   const { id } = useParams();
@@ -127,7 +129,8 @@ const PostDetail = () => {
           {post.category && <span>📁 {post.category}</span>}
         </div>
 
-        <div className="post-detail-content" ref={contentRef} dangerouslySetInnerHTML={{ __html: post.content }} />
+        <div className="post-detail-content" ref={contentRef}
+          dangerouslySetInnerHTML={{ __html: post.contentFormat === 'markdown' ? renderMarkdown(post.content) : post.content }} />
 
         <div className="post-actions">
           <button className={`action-btn ${liked ? 'liked' : ''}`} onClick={handleLike}>
