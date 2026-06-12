@@ -4,7 +4,7 @@
   "private": true,
   "homepage": "https://shaoguang369.top",
   "dependencies": {
-    "dompurify": "^3.4.8",
+    "dompurify": "^3.4.10",
     "js-yaml": "^4.2.0",
     "katex": "^0.17.0",
     "marked": "^17.0.6",
