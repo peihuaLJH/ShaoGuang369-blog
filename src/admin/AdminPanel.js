@@ -61,6 +61,7 @@ const AdminPanel = ({ user, onLogout, onSettingsChange }) => {
     { key: 'comments', label: '💬 评论管理' },
     { key: 'messages', label: '📮 留言管理' },
     { key: 'friends', label: '🔗 友链管理' },
+    { key: 'subscribers', label: '📧 订阅管理' },
     { key: 'settings', label: '⚙️ 网站设置' },
   ];
 
@@ -88,6 +89,7 @@ const AdminPanel = ({ user, onLogout, onSettingsChange }) => {
         {activeTab === 'comments' && <CommentManager showToast={showToast} />}
         {activeTab === 'messages' && <MessageManager showToast={showToast} />}
         {activeTab === 'friends' && <FriendManager showToast={showToast} />}
+        {activeTab === 'subscribers' && <SubscriberManager showToast={showToast} />}
         {activeTab === 'settings' && <SettingsManager showToast={showToast} onSettingsChange={onSettingsChange} />}
       </main>
     </div>
@@ -1080,6 +1082,87 @@ const FriendManager = ({ showToast }) => {
           ))}
         </tbody>
       </table>
+    </div>
+  );
+};
+
+/* ===== 订阅管理 ===== */
+const SubscriberManager = ({ showToast }) => {
+  const [subscribers, setSubscribers] = useState([]);
+  const [newEmail, setNewEmail] = useState('');
+  const [editId, setEditId] = useState(null);
+  const [editEmail, setEditEmail] = useState('');
+
+  const fetchSubscribers = () => {
+    fetch(`${API}/subscribe/admin`, { headers: authHeaders() })
+      .then(r => r.json()).then(d => setSubscribers(d.subscribers || [])).catch(() => {});
+  };
+  useEffect(fetchSubscribers, []);
+
+  const handleAdd = async () => {
+    if (!newEmail.trim()) return;
+    try {
+      const res = await fetch(`${API}/subscribe/admin`, { method: 'POST', headers: authHeaders(), body: JSON.stringify({ email: newEmail.trim() }) });
+      const data = await res.json();
+      if (res.ok) { setNewEmail(''); fetchSubscribers(); showToast('已添加，并已发送订阅成功邮件'); }
+      else showToast(data.message || '添加失败', 'error');
+    } catch { showToast('添加失败', 'error'); }
+  };
+
+  const handleSaveEdit = async (id) => {
+    try {
+      const res = await fetch(`${API}/subscribe/admin/${id}`, { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ email: editEmail.trim() }) });
+      const data = await res.json();
+      if (res.ok) { setEditId(null); fetchSubscribers(); showToast('已修改'); }
+      else showToast(data.message || '修改失败', 'error');
+    } catch { showToast('修改失败', 'error'); }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('确定删除该订阅者？')) return;
+    await fetch(`${API}/subscribe/admin/${id}`, { method: 'DELETE', headers: authHeaders() });
+    fetchSubscribers();
+    showToast('已删除');
+  };
+
+  return (
+    <div>
+      <h2 className="admin-title">订阅管理</h2>
+      <div style={{ display: 'flex', gap: 12, margin: '20px 0' }}>
+        <input className="form-input" type="email" value={newEmail} onChange={e => setNewEmail(e.target.value)}
+          placeholder="添加订阅邮箱（会给对方发订阅成功邮件）" style={{ flex: 1 }} onKeyDown={e => e.key === 'Enter' && handleAdd()} />
+        <button className="btn-primary" onClick={handleAdd}>添加</button>
+      </div>
+      <table className="admin-table">
+        <thead><tr><th>邮箱</th><th>订阅时间</th><th>操作</th></tr></thead>
+        <tbody>
+          {subscribers.map(s => (
+            <tr key={s._id}>
+              <td>
+                {editId === s._id
+                  ? <input className="form-input" value={editEmail} onChange={e => setEditEmail(e.target.value)}
+                      onKeyDown={e => e.key === 'Enter' && handleSaveEdit(s._id)} style={{ maxWidth: 280 }} autoFocus />
+                  : s.email}
+              </td>
+              <td>{new Date(s.subscribedAt).toLocaleDateString()}</td>
+              <td className="actions">
+                {editId === s._id ? (
+                  <>
+                    <button className="btn-success" onClick={() => handleSaveEdit(s._id)}>保存</button>
+                    <button className="btn-secondary" style={{ padding: '4px 12px', fontSize: '0.8rem' }} onClick={() => setEditId(null)}>取消</button>
+                  </>
+                ) : (
+                  <>
+                    <button className="btn-secondary" style={{ padding: '4px 12px', fontSize: '0.8rem' }} onClick={() => { setEditId(s._id); setEditEmail(s.email); }}>编辑</button>
+                    <button className="btn-danger" onClick={() => handleDelete(s._id)}>删除</button>
+                  </>
+                )}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+      {subscribers.length === 0 && <div className="no-data">暂无订阅者</div>}
     </div>
   );
 };
