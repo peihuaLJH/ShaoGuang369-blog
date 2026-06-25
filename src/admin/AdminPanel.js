@@ -993,7 +993,7 @@ const FriendManager = ({ showToast }) => {
   const [editId, setEditId] = useState(null);
 
   const fetchLinks = () => {
-    fetch(`${API}/friendlinks`).then(r => r.json()).then(d => setLinks(d.links || [])).catch(() => {});
+    fetch(`${API}/friendlinks/admin`, { headers: authHeaders() }).then(r => r.json()).then(d => setLinks(d.links || [])).catch(() => {});
   };
   useEffect(fetchLinks, []);
 
@@ -1034,6 +1034,12 @@ const FriendManager = ({ showToast }) => {
     showToast('友链已删除');
   };
 
+  const handleStatus = async (id, status) => {
+    await fetch(`${API}/friendlinks/${id}/status`, { method: 'PUT', headers: authHeaders(), body: JSON.stringify({ status }) });
+    fetchLinks();
+    showToast(status === 'approved' ? '已通过' : '已拒绝');
+  };
+
   return (
     <div>
       <h2 className="admin-title">友链管理</h2>
@@ -1067,14 +1073,21 @@ const FriendManager = ({ showToast }) => {
       </div>
 
       <table className="admin-table">
-        <thead><tr><th>头像</th><th>名称</th><th>链接</th><th>操作</th></tr></thead>
+        <thead><tr><th>头像</th><th>名称</th><th>链接</th><th>状态</th><th>操作</th></tr></thead>
         <tbody>
           {links.map(l => (
             <tr key={l._id}>
               <td><img src={l.avatar || ''} alt="" style={{ width: 32, height: 32, borderRadius: '50%' }} /></td>
               <td>{l.name}</td>
               <td><a href={l.url} target="_blank" rel="noopener noreferrer" style={{ fontSize: '0.85rem' }}>{l.url}</a></td>
+              <td>
+                <span style={{ color: l.status === 'pending' ? 'var(--gold)' : l.status === 'rejected' ? '#ef4444' : '#22c55e' }}>
+                  {l.status === 'pending' ? '待审核' : l.status === 'rejected' ? '已拒绝' : '已通过'}
+                </span>
+              </td>
               <td className="actions">
+                {l.status === 'pending' && <button className="btn-success" onClick={() => handleStatus(l._id, 'approved')}>通过</button>}
+                {l.status === 'pending' && <button className="btn-danger" onClick={() => handleStatus(l._id, 'rejected')}>拒绝</button>}
                 <button className="btn-secondary" style={{ padding: '4px 12px', fontSize: '0.8rem' }} onClick={() => handleEdit(l)}>编辑</button>
                 <button className="btn-danger" onClick={() => handleDelete(l._id)}>删除</button>
               </td>
