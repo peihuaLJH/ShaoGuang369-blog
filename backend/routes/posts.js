@@ -86,10 +86,18 @@ router.put('/:id', auth, adminOnly, async (req, res) => {
     const { title, content, summary, coverImage, category, tags, type, status, contentFormat } = req.body;
     const post = await Post.findById(req.params.id);
     if (!post) return res.status(404).json({ message: '文章不存在' });
+    const wasPublished = post.status === 'published';
     Object.assign(post, { title, content, summary, coverImage, category, tags, type, status });
     if (contentFormat) post.contentFormat = contentFormat;
     post.updatedAt = Date.now();
     await post.save();
+    // 从「非发布」变为「发布」时补发新文章通知（已发布的再编辑不重复发）
+    if (!wasPublished && post.status === 'published') {
+      const subscribers = await Subscriber.find();
+      if (subscribers.length > 0) {
+        sendNewPostNotification(subscribers, post);
+      }
+    }
     res.json(post);
   } catch (error) {
     res.status(500).json({ message: '服务器错误' });
