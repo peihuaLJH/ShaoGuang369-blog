@@ -5,6 +5,7 @@ const FriendLinkSchema = new mongoose.Schema({
   avatar: { type: String, default: '' },
   url: { type: String, required: true },
   description: { type: String, default: '' },
+  status: { type: String, default: 'approved', enum: ['pending', 'approved', 'rejected'] },
   createdAt: { type: Date, default: Date.now }
 });
 
