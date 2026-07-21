@@ -21,7 +21,11 @@ const FriendLinks = () => {
     fetch(`${API}/visitors/track`, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify({ page: '/friends' }) }).catch(() => {});
   }, []);
 
-  const defaultAvatar = (name) => `data:image/svg+xml;base64,${btoa(`<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#6366f1"/><text x="50" y="58" text-anchor="middle" fill="white" font-size="32" font-family="sans-serif">${name.charAt(0)}</text></svg>`)}`;
+  const defaultAvatar = (name) => {
+    const char = name ? name.charAt(0) : '?';
+    const svg = `<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="50" cy="50" r="50" fill="#6366f1"/><text x="50" y="58" text-anchor="middle" fill="white" font-size="32" font-family="sans-serif">${char}</text></svg>`;
+    return `data:image/svg+xml;base64,${btoa(unescape(encodeURIComponent(svg)))}`;
+  };
 
   const fetchCaptcha = useCallback(async () => {
     try {
